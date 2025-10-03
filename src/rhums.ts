@@ -139,48 +139,65 @@ type ToPattern<Segments> = Segments extends [infer Head, ...infer Tail]
   : {};
 
 export const route = <Pattern extends string>(
-  url: string,
+  pathname: string,
   config: {
     [Key in Pattern]: (value: ToPattern<SplitSegments<Key>>) => ReactNode;
   } & { _: () => ReactNode }
 ): ReactNode => {
-  const pathnameSegments = url === "/" ? [] : url.slice(1).split("/");
+  const pathnameSegments = pathname === "/" ? [] : pathname.slice(1).split("/");
 
   const defaultCase = config._;
   for (const [pattern, handler] of Object.entries(config)) {
-    const patternSegments = pattern === "/" ? [] : pattern.slice(1).split("/");
+    const match = matchPathnameSegmentsToPattern(pathnameSegments, pattern);
 
-    let index = -1;
-    let params: Record<string, string> = {};
-    let matches = true;
-    const length = Math.max(patternSegments.length, pathnameSegments.length);
-    while (++index < length) {
-      const patternSegment = patternSegments[index];
-      if (patternSegment == null) {
-        matches = false;
-        break;
-      }
-
-      if (patternSegment === "*" && index === patternSegments.length - 1) {
-        params.rest = "/" + pathnameSegments.slice(index).join("/");
-        break;
-      }
-      const pathnameSegment = pathnameSegments[index];
-      if (patternSegment.charAt(0) === ":" && pathnameSegment != null) {
-        params[patternSegment.slice(1)] = pathnameSegment;
-        continue;
-      }
-      if (patternSegment !== pathnameSegment) {
-        matches = false;
-        break;
-      }
-    }
-
-    if (matches) {
+    if (match !== undefined) {
       // @ts-expect-error
-      return handler(params);
+      return handler(match);
     }
   }
 
   return defaultCase();
+};
+
+const matchPathnameSegmentsToPattern = (
+  pathnameSegments: Array<string>,
+  pattern: string
+) => {
+  const patternSegments = pattern === "/" ? [] : pattern.slice(1).split("/");
+
+  let index = -1;
+  let params: Record<string, string> = {};
+  const length = Math.max(patternSegments.length, pathnameSegments.length);
+  while (++index < length) {
+    const patternSegment = patternSegments[index];
+    if (patternSegment == null) {
+      return undefined;
+    }
+
+    if (patternSegment === "*" && index === patternSegments.length - 1) {
+      params.rest = "/" + pathnameSegments.slice(index).join("/");
+      break;
+    }
+    const pathnameSegment = pathnameSegments[index];
+    if (patternSegment.charAt(0) === ":" && pathnameSegment != null) {
+      params[patternSegment.slice(1)] = pathnameSegment;
+      continue;
+    }
+    if (patternSegment !== pathnameSegment) {
+      return undefined;
+    }
+  }
+  return params;
+};
+
+export const matchPattern = (pathname: string, pattern: string) => {
+  const pathnameSegments = pathname === "/" ? [] : pathname.slice(1).split("/");
+  return matchPathnameSegmentsToPattern(pathnameSegments, pattern);
+};
+
+export const matchesPattern = (pathname: string, pattern: string) => {
+  const pathnameSegments = pathname === "/" ? [] : pathname.slice(1).split("/");
+  return (
+    matchPathnameSegmentsToPattern(pathnameSegments, pattern) !== undefined
+  );
 };

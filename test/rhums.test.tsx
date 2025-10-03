@@ -1,5 +1,11 @@
 import { expect, test } from "vitest";
-import { route, push, useUrl } from "../src/rhums";
+import {
+  route,
+  push,
+  useUrl,
+  matchPattern,
+  matchesPattern,
+} from "../src/rhums";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
@@ -51,4 +57,30 @@ test("Router", async () => {
 
   await userEvent.click(screen.getByText("Go to home"));
   expect(screen.getByRole("main")).toHaveTextContent("Home");
+});
+
+test("matchPattern", () => {
+  expect(matchPattern("/foo/bar/quux", "/foo/bar/:baz")).toEqual({
+    baz: "quux",
+  });
+  expect(matchPattern("/foo/bar", "/foo/*")).toEqual({
+    rest: "/bar",
+  });
+  expect(matchPattern("/foo/bar", "/foo")).toEqual(undefined);
+  expect(matchPattern("/foo/bar", "/bar/foo")).toEqual(undefined);
+  expect(matchPattern("/foo/bar", "/bar/*")).toEqual(undefined);
+  expect(matchPattern("/foo/bar", "/bar")).toEqual(undefined);
+  expect(matchPattern("/", "/")).toEqual({});
+  expect(matchPattern("/", "/*")).toEqual({ rest: "/" });
+});
+
+test("matchesPattern", () => {
+  expect(matchesPattern("/foo/bar/quux", "/foo/bar/:baz")).toEqual(true);
+  expect(matchesPattern("/foo/bar", "/foo/*")).toEqual(true);
+  expect(matchesPattern("/foo/bar", "/foo")).toEqual(false);
+  expect(matchesPattern("/foo/bar", "/bar/foo")).toEqual(false);
+  expect(matchesPattern("/foo/bar", "/bar/*")).toEqual(false);
+  expect(matchesPattern("/foo/bar", "/bar")).toEqual(false);
+  expect(matchesPattern("/", "/")).toEqual(true);
+  expect(matchesPattern("/", "/*")).toEqual(true);
 });
