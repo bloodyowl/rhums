@@ -1,3 +1,9 @@
+## 2.1.1
+
+Fixes:
+
+- Fix build
+
 ## 2.1.0
 
 Features:
