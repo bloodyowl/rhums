@@ -1,3 +1,9 @@
+## 0.2.0
+
+Features:
+
+- Added `matchPattern` & `matchesPattern` utility functions (45391d1)
+
 ## 0.1.2
 
 Changes:
